@@ -1,0 +1,13 @@
+{
+  "name": "language-learning",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev:web": "pnpm --filter ./apps/web dev",
+    "build:web": "pnpm --filter ./apps/web build"
+  },
+  "keywords": [],
+  "author": "Aaron Macken",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.2"
+}
