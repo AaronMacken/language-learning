@@ -94,3 +94,16 @@ So when we attempt to import `domain`, Node resolves it from `node_modules`,
 but pnpm created a symlink there that points to the local packages/domain folder.
 
 This lets us use the live code without publishing anything - less friction.
+
+---
+
+Ran this command
+
+```
+pnpm create vite apps/web --template react-ts
+```
+
+This scaffolds a React + TypeScript app inside apps/web using Vite.
+It generates the base project structure along with config files like
+vite.config.ts, tsconfig.json, and ESLint setup
+similar to Create React App, but without hiding the build configuration.
