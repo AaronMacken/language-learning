@@ -107,3 +107,21 @@ This scaffolds a React + TypeScript app inside apps/web using Vite.
 It generates the base project structure along with config files like
 vite.config.ts, tsconfig.json, and ESLint setup
 similar to Create React App, but without hiding the build configuration.
+
+There were a lot of bootstrap files so lets go over them now:
+
+eslint.config.js
+
+This is extending some configs from a few installed packages.
+Previously I'd used airbnb's popular config, here we are instead using:
+
+eslint/js (don't write broken JS)
+tseslint (helps understand bad TS practices)
+reactHooks (ensures hooks are called correctly)
+reactRefresh (nuanced - ensures compatibility with vites hot reload)
+
+globals.browser (tells eslint its running in a browser w/ browser APIs)
+
+You can still have a rules section, I may at some point copy over some rules I used in my previous react app template.
+
+For now I'll use these base level rules and expand upon as I see fit.
