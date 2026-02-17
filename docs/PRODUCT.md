@@ -15,18 +15,27 @@
 5. **Branch** — (Later) Past, Future, Question. User taps; you explain difference, not rules.
 6. **Soft commitment (optional)** — After 5–10 minutes: "Want to keep narrating your day tomorrow?" Email optional. No pressure.
 
+## Validation goal
+
+MVP is successful if:
+
+- A user completes at least one full verb flow.
+- User expresses understanding of the pattern.
+- UX feels simple and obvious.
+- Implementation remains under-engineered and easy to modify.
+
 ## Content table (8 verbs)
 
-| Verb (EN) | Screen 1 (I need to ___) | Screen 2 (I ___) |
-|-----------|---------------------------|------------------|
-| eat       | Necesito comer            | Como             |
-| work      | Necesito trabajar        | Trabajo          |
-| study     | Necesito estudiar        | Estudio          |
-| use       | Necesito usar             | Uso              |
-| buy       | Necesito comprar         | Compro           |
-| prepare   | Necesito preparar        | Preparo          |
-| drink     | Necesito beber           | Bebo             |
-| cook      | Necesito cocinar         | Cocino           |
+| Verb (EN) | Screen 1 (I need to \_\_\_) | Screen 2 (I \_\_\_) |
+| --------- | --------------------------- | ------------------- |
+| eat       | Necesito comer              | Como                |
+| work      | Necesito trabajar           | Trabajo             |
+| study     | Necesito estudiar           | Estudio             |
+| use       | Necesito usar               | Uso                 |
+| buy       | Necesito comprar            | Compro              |
+| prepare   | Necesito preparar           | Preparo             |
+| drink     | Necesito beber              | Bebo                |
+| cook      | Necesito cocinar            | Cocino              |
 
 **Pattern:** Necesito = "I need". When you do an action, Spanish often ends the verb with -o. Verbs are first shown in their simplest, most regular form. No reflexive verbs, no irregulars, no tense explanations initially.
 
@@ -36,7 +45,16 @@
 - **No grammar jargon** — No "conjugation," "infinitive," etc. Explain meaning and difference, not rules.
 - **Confidence > coverage** — User should feel: "I already know how to say things." Progress = depth, not breadth.
 - **Always start from something they already know** — This should feel like thinking out loud, not studying. If users say "It feels obvious in a good way," you're winning.
-- If a verb introduces extra complexity (e.g. *me levanto*), postpone it.
+- If a verb introduces extra complexity (e.g. _me levanto_), postpone it.
+
+## Technical constraints (MVP)
+
+- Frontend-only.
+- No backend.
+- No auth.
+- No analytics.
+- No email integration (soft commitment is UI only).
+- No global state library required unless complexity demands it.
 
 ## Explicit exclusions (non-negotiable)
 

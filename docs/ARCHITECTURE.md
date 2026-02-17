@@ -1,5 +1,12 @@
 # Architecture
 
+## MVP reality (right now)
+
+- Only `apps/web` is in scope.
+- Frontend-only. No backend, no persistence required.
+- All learning content is hardcoded (no APIs).
+- `packages/domain` may exist, but keep it minimal until real complexity shows up.
+
 ## Goals
 
 - Keep all apps centralized while allowing independent deployments.
@@ -20,7 +27,6 @@ apps/
 packages/
   domain/   # Core business logic & domain models (learning progress, lessons, spaced repetition rules, etc.)
   utils/    # Generic helper functions (no business meaning)
-  ui/       # Shared, framework-agnostic UI components (optional)
   config/   # Shared tooling (tsconfig, eslint, etc.)
 ```
 
@@ -39,15 +45,19 @@ packages/
 - Safe to import from any app.
 - Changes here may affect multiple apps.
 
-## Tech stack (MVP)
+## Tech stack
 
-- **Frontend:** React + TypeScript, Vite (or Next.js). Minimal styling (Tailwind or plain CSS). Mobile-first, web only for MVP.
-- **Backend (later):** Option A — Supabase (auth, Postgres, RLS, server actions or API routes). Option B — No auth at first; local storage + anonymous sessions; add backend when users ask for accounts.
+### Now (MVP)
 
-## Data model (simple, for future backend)
+- Web: React + TypeScript
+- Build: Vite
+- Styling: minimal (Tailwind or plain CSS)
+- State: local component state (no global store unless needed)
 
-- **habits** — `id`, `label_en` (e.g. "brush my teeth").
-- **sentence_variations** — `habit_id`, `tense` (present/past/future), `form` (statement/question/negative), `target_sentence`, `breakdown` (JSON chunks).
+### Later (not MVP)
+
+- Mobile: TBD
+- API: TBD (Supabase optional)
 
 ## Deployment model
 

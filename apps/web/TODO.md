@@ -1,0 +1,2 @@
+- integrate tailwind
+- implement react router

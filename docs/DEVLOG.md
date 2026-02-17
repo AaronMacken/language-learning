@@ -108,7 +108,17 @@ It generates the base project structure along with config files like
 vite.config.ts, tsconfig.json, and ESLint setup
 similar to Create React App, but without hiding the build configuration.
 
-There were a lot of bootstrap files so lets go over them now:
+-
+
+First off, what is vite, and how does it differ from webpack?
+
+Webpack and Rollup are both bundlers that build a dependency graph of your application’s modules. Webpack is highly configurable with a large plugin and loader ecosystem, making it ideal when you need deep control over the build pipeline. Rollup is ESM-first, which allows for stronger static analysis and tree-shaking, and it focuses on producing smaller, cleaner, optimized production bundles.
+
+Vite is a dev server and build tool. In development, it does not bundle your entire app upfront like Webpack; instead, it serves native ES modules directly to the browser and uses esbuild for very fast transforms (like TypeScript and JSX). For production builds, Vite uses Rollup under the hood to create an optimized bundle.
+
+-
+
+There's also a lot of bootstrap files so lets go over them now:
 
 eslint.config.js
 
@@ -125,3 +135,7 @@ globals.browser (tells eslint its running in a browser w/ browser APIs)
 You can still have a rules section, I may at some point copy over some rules I used in my previous react app template.
 
 For now I'll use these base level rules and expand upon as I see fit.
+
+ts.config.json
+
+it had some sensible configs, feel free to add to the linting section here

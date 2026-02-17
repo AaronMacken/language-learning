@@ -1,4 +1,3 @@
-
 I want to execute the plan one phase at a time. When I tell you which phase (and optional step) I'm on, walk me through the exact commands and file changes, and help me verify the step before moving on.
 
 **Phase 1 — Repo and web app scaffold:** Root package manager (pnpm preferred), create apps/web with Vite (react-ts template), add Tailwind to apps/web. Optional: pnpm workspaces. Done when: pnpm install works, dev server runs, Tailwind applies.
