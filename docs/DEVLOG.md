@@ -1,42 +1,130 @@
-This file is used as a devlog to track my progress and learning
+# Development Log
 
-Phase 1: Repo and webapp scaffold
+## Phase 1: Monorepo & Web App Scaffold
+
+### Architecture Decisions
+
+#### Why Monorepo?
+
+**Decision:** Use a monorepo structure with pnpm workspaces.
+
+**Rationale:**
+
+- **Code Sharing:** Share TypeScript types, domain logic, UI components, and utilities across web, mobile, and API without publishing packages
+- **Atomic Changes:** Update shared code and all consuming apps in a single PR; test together, deploy confidently
+- **Consistency:** Single source of truth for ESLint, TypeScript, Prettier, and dependency versions
+- **No Version Hell:** Eliminate version mismatch issues and multi-repo dependency update overhead
+- **Future Mobile App:** Planned React Native app can reuse domain logic and shared utilities
+
+**Tradeoffs:**
+
+- Larger repo size (mitigated by pnpm's content-addressable storage)
+- Need discipline to maintain package boundaries (apps can depend on packages, but packages cannot depend on apps)
+- All developers need pnpm installed
+
+**Boundary Rules:**
+
+```
+apps/*     → can import from packages/*
+packages/* → cannot import from apps/*
+packages/* → avoid circular dependencies between packages
+```
 
 ---
 
-Ran this in the terminal
+#### Why pnpm?
 
-```
+**Decision:** Use pnpm instead of npm or yarn.
+
+**Rationale:**
+
+- **Workspace Support:** First-class monorepo support with efficient symlink-based local package resolution
+- **Disk Efficiency:** Content-addressable global store means packages are stored once and hard-linked into node_modules
+- **Strict by Default:** Enforces that dependencies must be declared (prevents phantom dependencies)
+- **Fast:** Faster installs than npm/yarn in most cases
+
+**Setup (requires Node v16.9+):**
+
+```bash
 corepack enable
 corepack prepare pnpm@latest --activate
 ```
 
-Explanation: corepack is a tool that ships with Node v16.9+
-It turns corepack on and lets node manage package managers like pnpm and yarn
-No need to globally install pnpm
+**How It Works:**
 
-the second line downloads the latest version of pnpm and activates it as the version on your machine
+- pnpm-workspace.yaml declares `apps/*` and `packages/*` as workspace packages
+- Each folder with a package.json becomes a local package
+- On `pnpm install`, pnpm creates symlinks in node_modules pointing to local packages
+- Importing `import { X } from 'domain'` resolves to the live `packages/domain` folder via symlink
 
-Other devs on the project will also need to run this command while setting up their workspace
+**Example:**
 
-why pnpm? because its good for monorepos
-
-It uses a global store so you dont have to reinstall packages that have already been installed before
-
----
-
-Why a monorepo anyways? Shared Code.
-
-I can easily share common components, TypeScript types, domain logic to be reused across apps.
-One ESLint config, one TS config, one prettier config, one dependency strategy.
-I can update a shared component and all consuming apps in one PR, test together, deploy confidently.
-No version mismatch chaos or additional overhead with having mutiple PRs to consume the new dependency package version.
+```typescript
+// In apps/web/src/App.tsx
+import { myUtil } from 'domain'; // Resolves to packages/domain via symlink
+```
 
 ---
 
-Some package json config,
+#### Why Vite (vs Next.js, CRA, or Webpack)?
+
+**Decision:** Use Vite for the web app build tool.
+
+**Rationale:**
+
+- **Dev Speed:** Native ESM in dev = no bundling upfront; esbuild transforms TypeScript/JSX instantly
+- **Production-Ready:** Uses Rollup for optimized production builds with tree-shaking
+- **Simplicity:** No framework lock-in (unlike Next.js); explicit config (unlike CRA)
+- **Flexibility:** Can add React Router for routing, Tailwind for styling—bring your own stack
+- **Better for SPA MVP:** This app doesn't need SSR or file-based routing yet
+
+**Tradeoffs:**
+
+- No SSR out of the box (Next.js would provide this, but MVP doesn't need it)
+- Need to configure routing, data fetching, auth manually (vs Next.js conventions)
+- Less opinionated = more decisions to make
+
+**When to Reconsider:**
+
+- If SEO becomes critical → migrate to Next.js with SSR
+- If we add a public marketing site → add a separate Next.js app to the monorepo
+
+**Vite vs Webpack vs Rollup:**
+
+| Tool    | Purpose          | Dev Experience           | Production          |
+| ------- | ---------------- | ------------------------ | ------------------- |
+| Webpack | Bundler          | Slower (bundles upfront) | Highly configurable |
+| Rollup  | Bundler          | Not designed for dev     | Best tree-shaking   |
+| Vite    | Dev + Build Tool | Instant (native ESM)     | Uses Rollup         |
+
+**Key Insight:** Vite is a **dev server** (serves native ES modules) + **build tool** (uses Rollup for production). It does not bundle during dev, making HMR nearly instant.
+
+---
+
+### Repository Structure
 
 ```
+language-learning/
+├── apps/
+│   ├── web/          # Vite + React + TypeScript SPA
+│   ├── mobile/       # (planned) React Native
+│   └── api/          # (planned) Backend API
+├── packages/
+│   ├── domain/       # Core learning logic (spaced repetition, content models)
+│   ├── utils/        # Shared utilities
+│   └── config/       # Shared config (ESLint, TS, etc.)
+├── docs/
+│   ├── PRODUCT.md
+│   ├── ARCHITECTURE.md
+│   └── DEVLOG.md
+├── package.json
+├── pnpm-workspace.yaml
+└── pnpm-lock.yaml
+```
+
+**Root package.json:**
+
+```json
 {
   "name": "language-learning",
   "private": true,
@@ -47,95 +135,156 @@ Some package json config,
 }
 ```
 
-Private is set to true because we don't want to publish this repo to npm
-Have some scripts in there so you can run the web app from the root,
-unsure of how the architecture will look as of right now, this is just AI boiler plate
-Jurys out on if we will use that or not
+- `"private": true` prevents accidental publishing to npm
+- `--filter` targets specific workspace packages
 
 ---
 
-Workspaces (monorepo magic) -> pnpm-workspace.yaml
+### Configuration Files (apps/web)
 
+#### TypeScript: Dual Runtime Setup
+
+**Files:**
+
+- `tsconfig.json` (references app and node configs)
+- `tsconfig.app.json` (browser runtime: React app code)
+- `tsconfig.node.json` (Node runtime: vite.config.ts)
+
+**Why Two Runtimes?**
+
+- Vite runs in Node.js but bundles code for the browser
+- vite.config.ts needs Node types and module resolution
+- App code needs DOM types and browser globals
+
+**Example:**
+
+```typescript
+// vite.config.ts → uses tsconfig.node.json (Node typings, no DOM)
+// src/App.tsx → uses tsconfig.app.json (DOM typings, browser globals)
 ```
-packages:
-  - 'apps/*'
-  - 'packages/*'
-```
-
-This tells pnpm, "treat any folder inside apps/ or packages/ as a package"
-
-Meaning, each of the following below (example) can have it's own package.json
-
-```
-apps/
-  web/
-packages/
-  domain/
-  utils/
-```
-
-When you run `pnpm install`, pnpm will detect all folders matching apps/_ and packages/_
-then look for a package.json inside of each
-it treats them like local packages and automatically links them via symlinks
-
-A what? a symlink! (symbolic link)
-
-As mentioned previously, the benefit of our mono repo is having it act as a source of truth, as opposed to having multiple repos and shared code packages that we need to manage the overhead of.
-
-When we do something like this
-
-```
-import { myUtil } from 'domain';
-```
-
-thanks to the workspace config, pnpm treats packages/domain as a local package.
-
-So when we attempt to import `domain`, Node resolves it from `node_modules`,
-but pnpm created a symlink there that points to the local packages/domain folder.
-
-This lets us use the live code without publishing anything - less friction.
 
 ---
 
-Ran this command
+#### ESLint Config (eslint.config.js)
 
+**Extends:**
+
+- `@eslint/js` – Core JavaScript rules
+- `typescript-eslint` – TypeScript-specific linting
+- `eslint-plugin-react-hooks` – Enforces Rules of Hooks
+- `eslint-plugin-react-refresh` – Ensures HMR compatibility (Vite-specific)
+
+**Globals:**
+
+- `globals.browser` – Tells ESLint code runs in browser (window, document, etc.)
+
+**Why Not Airbnb?**
+
+- Airbnb config is opinionated and sometimes conflicts with modern TypeScript patterns
+- Starting minimal, will add custom rules as needed
+
+---
+
+#### Vite Config (vite.config.ts)
+
+**Current Setup:**
+
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()], // JSX transform + Fast Refresh
+});
 ```
+
+**Common Future Additions:**
+
+**Path Aliases:**
+
+```typescript
+resolve: {
+  alias: {
+    '@': '/src',
+    'domain': '../packages/domain/src'
+  }
+}
+```
+
+**API Proxy (for local dev):**
+
+```typescript
+server: {
+  proxy: {
+    '/api': 'http://localhost:3000'
+  }
+}
+```
+
+**Code Splitting / Chunking** can be configured in `build.rollupOptions`.
+
+---
+
+### Scaffold Command
+
+```bash
 pnpm create vite apps/web --template react-ts
 ```
 
-This scaffolds a React + TypeScript app inside apps/web using Vite.
-It generates the base project structure along with config files like
-vite.config.ts, tsconfig.json, and ESLint setup
-similar to Create React App, but without hiding the build configuration.
+**What This Does:**
 
--
+- Scaffolds React + TypeScript project in apps/web
+- Generates vite.config.ts, tsconfig.json, ESLint config
+- Similar to Create React App but does not hide build config
+- Provides full control over Vite configuration
 
-First off, what is vite, and how does it differ from webpack?
+---
 
-Webpack and Rollup are both bundlers that build a dependency graph of your application’s modules. Webpack is highly configurable with a large plugin and loader ecosystem, making it ideal when you need deep control over the build pipeline. Rollup is ESM-first, which allows for stronger static analysis and tree-shaking, and it focuses on producing smaller, cleaner, optimized production bundles.
+## Key Takeaways
 
-Vite is a dev server and build tool. In development, it does not bundle your entire app upfront like Webpack; instead, it serves native ES modules directly to the browser and uses esbuild for very fast transforms (like TypeScript and JSX). For production builds, Vite uses Rollup under the hood to create an optimized bundle.
+### Monorepo Benefits
 
--
+- Share code without publishing
+- Atomic cross-package updates
+- Single config strategy
 
-There's also a lot of bootstrap files so lets go over them now:
+### pnpm Benefits
 
-eslint.config.js
+- Efficient storage (global content-addressable store)
+- Symlink-based workspace resolution
+- Strict dependency enforcement
 
-This is extending some configs from a few installed packages.
-Previously I'd used airbnb's popular config, here we are instead using:
+### Vite Benefits
 
-eslint/js (don't write broken JS)
-tseslint (helps understand bad TS practices)
-reactHooks (ensures hooks are called correctly)
-reactRefresh (nuanced - ensures compatibility with vites hot reload)
+- Instant dev server (native ESM)
+- Production builds via Rollup
+- Explicit, minimal config
+- No SSR overhead for SPA MVP
 
-globals.browser (tells eslint its running in a browser w/ browser APIs)
+### Tradeoffs Made
 
-You can still have a rules section, I may at some point copy over some rules I used in my previous react app template.
+- No SSR (can add Next.js later if needed)
+- Manual routing/state setup (bring your own stack)
+- Monorepo discipline required (enforce package boundaries)
 
-For now I'll use these base level rules and expand upon as I see fit.
+---
 
-ts.config.json
+## Potential Evolution Paths
 
-it had some sensible configs, feel free to add to the linting section here
+**At 1k Users:**
+
+- Add caching layer (React Query, SWR)
+- Optimize bundle size (lazy loading, code splitting)
+
+**At 10k Users:**
+
+- CDN for static assets
+- Consider API rate limiting
+- Monitor bundle size / Core Web Vitals
+
+**Future Architecture Changes:**
+
+- Add React Native mobile app (reuse domain package)
+- Add backend API (Node/Express or similar in apps/api)
+- If SEO needed → add Next.js for public pages
+- If global state grows → add Zustand or Jotai (prefer local state first)
